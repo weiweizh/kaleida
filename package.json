@@ -1,0 +1,22 @@
+{
+  "name": "kaleida",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Kaleida — an interactive web-based kaleidoscope generator built with React, Tailwind CSS and HTML5 Canvas.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.11",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.1.11",
+    "vite": "^6.3.5"
+  }
+}
