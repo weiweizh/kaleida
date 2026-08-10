@@ -9,7 +9,7 @@ Kaleida is an interactive kaleidoscope generator that mirrors any image into end
 <!-- Add a short video showing Kaleida in action -->
 <img width="1453" height="772" alt="kalesoScope-pattern" src="https://github.com/user-attachments/assets/ecf93dfe-50d2-4ea1-ab69-e10eaa49fcbd" />
 
-
+try it out here: https://weiweizh.github.io/kaleida/
 
 ## Features
 
