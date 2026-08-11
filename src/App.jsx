@@ -32,6 +32,7 @@ const DEFAULT_ADJUSTMENTS = {
   saturate: 100,
   blur: 0,
   scale: 1,
+  opacity: 100,
 }
 
 export default function App() {
@@ -214,7 +215,7 @@ export default function App() {
             <div className="font-display text-[17px] font-bold tracking-tight text-ink">
               Kaleida
             </div>
-            <div className="spec mt-0.5">See the world through a kaleidoscope.</div>
+            <div className="spec mt-0.5">See the world through a kaleidoscope — make beautiful patterns.</div>
           </div>
         </div>
         <div className="spec ml-auto hidden sm:block">2048 px exports · canvas renderer</div>

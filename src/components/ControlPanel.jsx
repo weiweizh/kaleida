@@ -49,11 +49,11 @@ function Section({ title, defaultOpen = true, children }) {
         aria-expanded={open}
         className="group flex w-full items-center gap-2 py-1 text-left"
       >
-        <span className="spec font-semibold text-ink">{title}</span>
-        <span className="h-px flex-1 bg-line transition-colors group-hover:bg-line-strong" />
+        <span className={`spec font-semibold transition-colors duration-150 ease-[var(--ease-snappy)] ${open ? 'text-ink' : 'text-ink-soft group-hover:text-ink'}`}>{title}</span>
+        <span className="h-px flex-1 bg-line transition-colors duration-150 ease-[var(--ease-snappy)] group-hover:bg-line-strong" />
         <ChevronIcon
           size={13}
-          className={`text-ink-soft transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          className={`text-ink-soft transition-all duration-150 ease-[var(--ease-snappy)] group-hover:-translate-y-px ${open ? 'rotate-180 text-ink' : 'group-hover:text-ink'}`}
         />
       </button>
       <div
@@ -78,7 +78,7 @@ function AnimateRow({ params, onTogglePlay }) {
       <button
         type="button"
         onClick={onTogglePlay}
-        className={`flex h-10 w-10 items-center justify-center border transition-colors ${
+        className={`pressable flex h-10 w-10 items-center justify-center border ${
           params.playing ? 'border-ink bg-ink text-paper' : 'border-line-strong bg-paper text-ink-soft hover:border-ink hover:text-ink'
         }`}
         aria-label={params.playing ? 'Pause animation' : 'Play animation'}
@@ -95,6 +95,7 @@ function AnimateRow({ params, onTogglePlay }) {
  */
 export default function ControlPanel({ mode, params, adjustments, background, display, onMode, onParam, onAdjust, onBackground, onDisplay, onTogglePlay, onShuffle }) {
   const flow = mode === 'flow'
+  const [shuffleSpin, setShuffleSpin] = useState(0)
 
   return (
     <div className="space-y-6">
@@ -103,10 +104,13 @@ export default function ControlPanel({ mode, params, adjustments, background, di
         <p className="mt-2 text-[11.5px] leading-relaxed text-ink-soft">{MODE_BLURBS[mode]}</p>
         <button
           type="button"
-          onClick={onShuffle}
-          className="mt-3 flex w-full items-center justify-center gap-2 border border-ink bg-paper px-3 py-2.5 text-[12.5px] font-semibold text-ink transition-colors hover:bg-ink hover:text-paper"
+          onClick={() => {
+            setShuffleSpin((s) => s + 1)
+            onShuffle()
+          }}
+          className="pressable mt-3 flex w-full items-center justify-center gap-2 border border-ink bg-paper px-3 py-2.5 text-[12.5px] font-semibold text-ink hover:bg-ink hover:text-paper"
         >
-          <ShuffleIcon size={15} />
+          <ShuffleIcon key={shuffleSpin} size={15} className="shuffle-spin" />
           Surprise me
         </button>
       </Section>
@@ -184,8 +188,8 @@ export default function ControlPanel({ mode, params, adjustments, background, di
                       type="button"
                       title={pal.label}
                       onClick={() => onParam('palette', id)}
-                      className={`flex flex-col items-center gap-1.5 border p-2 transition-colors ${
-                        active ? 'border-ink bg-paper' : 'border-line bg-white hover:border-line-strong'
+                      className={`pressable flex flex-col items-center gap-1.5 border p-2 ${
+                        active ? 'border-ink bg-paper' : 'border-line bg-white hover:border-ink'
                       }`}
                     >
                       <span className="flex h-8 w-8 items-center justify-center overflow-hidden border border-line-strong">
@@ -330,6 +334,15 @@ export default function ControlPanel({ mode, params, adjustments, background, di
               value={adjustments.blur}
               onChange={(v) => onAdjust('blur', v)}
               format={(x) => `${x.toFixed(1)}px`}
+            />
+            <Slider
+              label="Opacity"
+              min={0}
+              max={100}
+              step={1}
+              value={adjustments.opacity ?? 100}
+              onChange={(v) => onAdjust('opacity', v)}
+              format={(x) => `${x}%`}
             />
             <Slider
               label="Pattern scale"

@@ -1,6 +1,6 @@
 # Kaleida
 
-See the world through a kaleidoscope.
+See the world through a kaleidoscope — make beautiful patterns.
 
 Kaleida is an interactive kaleidoscope generator that mirrors any image into endless symmetrical patterns. Built with React 18, Vite, Tailwind CSS, and an HTML5 Canvas renderer.
 

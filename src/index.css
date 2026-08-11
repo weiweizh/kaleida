@@ -34,6 +34,11 @@
   --font-display: "Archivo", ui-sans-serif, system-ui, sans-serif;
   --font-body: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  /* Motion — snappy ease-out for entrances, refined settle for presses.
+     No bounce/elastic curves: they feel dated and draw attention to motion. */
+  --ease-snappy: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 :root {
@@ -111,7 +116,7 @@ input[type="range"].kaleid-slider::-webkit-slider-thumb {
   border-radius: 1px;
   background: var(--color-ink);
   border: 0;
-  transition: transform 0.15s ease, background 0.15s ease;
+  transition: transform 0.12s var(--ease-settle), background 0.15s var(--ease-snappy);
 }
 
 input[type="range"].kaleid-slider::-webkit-slider-thumb:hover {
@@ -164,6 +169,120 @@ input[type="range"].kaleid-slider::-moz-range-thumb {
   -webkit-user-select: none;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * ---- Shared micro-interactions ----
+ * Flat print treatment: a quick ink-colour shift on hover and a subtle
+ * "press" scale on active. Hover-in uses a snappy ease-out curve (fast start,
+ * decelerating arrival) so nothing feels laggy; transform-only motion for 60fps.
+ */
+.pressable {
+  transition:
+    transform 0.12s var(--ease-settle),
+    background-color 0.15s var(--ease-snappy),
+    border-color 0.15s var(--ease-snappy),
+    color 0.15s var(--ease-snappy),
+    box-shadow 0.15s var(--ease-snappy),
+    opacity 0.15s var(--ease-snappy);
+  will-change: transform;
+}
+
+.pressable:active {
+  transform: scale(0.96);
+}
+
+/* Lifted hover for cards/tiles — reads as "this is selectable" */
+.tile-lift {
+  transition:
+    transform 0.18s var(--ease-snappy),
+    border-color 0.15s var(--ease-snappy),
+    box-shadow 0.15s var(--ease-snappy),
+    background-color 0.15s var(--ease-snappy),
+    opacity 0.15s var(--ease-snappy);
+}
+
+.tile-lift:hover {
+  transform: translateY(-1px);
+}
+
+.tile-lift:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* Selection feedback — a tiny "settle" pulse when an option becomes active,
+     so clicking one reads as a deliberate choice rather than a colour swap. */
+@keyframes select-settle {
+  0% {
+    transform: scale(0.985);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.select-settle {
+  animation: select-settle 0.2s var(--ease-snappy) both;
+}
+
+/* Checkmark pop-in for picked tiles/swatches */
+@keyframes check-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.check-pop {
+  animation: check-pop 0.24s var(--ease-snappy) both;
+}
+
+/* Shuffle — the icon does one decisive quarter-turn on click, like
+     reshuffling a deck, then settles. */
+@keyframes shuffle-spin {
+  0% {
+    transform: rotate(0) scale(1);
+  }
+  40% {
+    transform: rotate(120deg) scale(1.12);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+.shuffle-spin {
+  animation: shuffle-spin 0.45s var(--ease-snappy) both;
+}
+
+/* Source image entrance — a quick fade + scale-in when a new source loads,
+     so switching presets reads as a deliberate, continuous reveal. */
+@keyframes source-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.source-in {
+  animation: source-in 0.35s var(--ease-snappy) both;
+}
+
+/* Accessible focus ring — printer-blue hairline, never a glow */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 /* Live dot: a small ink square, no pulse — the count is the signal */
@@ -228,7 +347,13 @@ input[type="range"].kaleid-slider::-moz-range-thumb {
   .re-fold,
   .shuffle-settle,
   .breathe,
-  .live-dot {
+  .live-dot,
+  .pressable,
+  .tile-lift,
+  .select-settle,
+  .check-pop,
+  .shuffle-spin,
+  .source-in {
     animation: none !important;
     transition: none !important;
   }

@@ -17,8 +17,20 @@ export default function PreviewPanel({ source, viewport, params, adjustments, ba
   const canvasRef = useRef(null)
   const stage = useElementSize(stageRef)
 
-  const outWidth = Math.floor(Math.max(MIN_PREVIEW, Math.min(stage.width, MAX_PREVIEW)))
-  const outHeight = Math.floor(Math.max(MIN_PREVIEW, Math.min(stage.height, MAX_PREVIEW)))
+  const rawW = Math.floor(Math.max(MIN_PREVIEW, Math.min(stage.width, MAX_PREVIEW)))
+  const rawH = Math.floor(Math.max(MIN_PREVIEW, Math.min(stage.height, MAX_PREVIEW)))
+  const single = display?.layout !== 'tiled'
+  let outWidth = single ? Math.min(rawW, rawH) : rawW
+  let outHeight = single ? Math.min(rawW, rawH) : rawH
+
+  // In tiled mode, size the canvas to the square-cell grid's exact aspect
+  // ratio so the grid fills the output edge-to-edge with no leftover gutters.
+  if (!single && outWidth > 0 && outHeight > 0) {
+    const tiles = Math.min(8, Math.max(1, display.tiles | 0))
+    const cols = outWidth >= outHeight ? Math.max(1, Math.round((tiles * outWidth) / outHeight)) : tiles
+    const rows = outWidth >= outHeight ? tiles : Math.max(1, Math.round((tiles * outHeight) / outWidth))
+    outHeight = Math.round((outWidth * rows) / cols)
+  }
   const mapSize = { width: outWidth, height: outHeight }
 
   const { fps, animating } = useKaleidoscopeRenderer({
@@ -59,7 +71,7 @@ export default function PreviewPanel({ source, viewport, params, adjustments, ba
           <h2 className="font-display text-[15px] font-bold text-ink">{modeLabel} output</h2>
           <p className="spec mt-0.5">
             {outWidth}×{outHeight}px
-            {params.shape === 'square' ? ' · square' : ''}
+            {params.shape === 'circle' ? ' · circle' : params.shape === 'square' ? ' · square' : ''}
             {tiledLabel}
           </p>
         </div>
@@ -126,7 +138,7 @@ export default function PreviewPanel({ source, viewport, params, adjustments, ba
           type="button"
           onClick={onExport}
           disabled={exporting || !source}
-          className={`flex shrink-0 items-center gap-2 border px-3.5 py-2 text-[12.5px] font-semibold transition-colors ${
+          className={`pressable group flex shrink-0 items-center gap-2 border px-3.5 py-2 text-[12.5px] font-semibold ${
             exporting || !source
               ? 'cursor-not-allowed border-line bg-white text-ink-faint'
               : 'border-ink bg-ink text-paper hover:bg-accent hover:border-accent'
@@ -139,7 +151,7 @@ export default function PreviewPanel({ source, viewport, params, adjustments, ba
             </>
           ) : (
             <>
-              <DownloadIcon size={15} />
+              <DownloadIcon size={15} className="transition-transform duration-150 ease-[var(--ease-snappy)] group-hover:translate-y-px" />
               Download Pattern
             </>
           )}

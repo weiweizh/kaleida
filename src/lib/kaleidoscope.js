@@ -531,6 +531,7 @@ export async function exportKaleidoscope({
     canvas.width = size
     canvas.height = size
     const ctx = canvas.getContext('2d')
+    ctx.globalAlpha = Math.max(0, Math.min(1, (adjustments.opacity ?? 100) / 100))
     ctx.drawImage(tileCanvas, 0, 0, size, size)
     return blobFromCanvas(canvas)
   }
@@ -545,6 +546,7 @@ export async function exportKaleidoscope({
   canvas.width = size
   canvas.height = size
   const ctx = canvas.getContext('2d')
+  ctx.globalAlpha = Math.max(0, Math.min(1, (adjustments.opacity ?? 100) / 100))
   if (tiles === 1) {
     ctx.drawImage(tileCanvas, 0, 0, size, size)
   } else {

@@ -5,16 +5,17 @@ import Slider from './Slider.jsx'
 import { ResetIcon, CrosshairIcon } from './Icon.jsx'
 
 const HANDLES = [
-  { id: 'nw', cursor: 'nwse-resize' },
-  { id: 'ne', cursor: 'nesw-resize' },
-  { id: 'sw', cursor: 'nesw-resize' },
-  { id: 'se', cursor: 'nwse-resize' },
+  { id: 'n', cursor: 'ns-resize' },
+  { id: 'e', cursor: 'ew-resize' },
+  { id: 's', cursor: 'ns-resize' },
+  { id: 'w', cursor: 'ew-resize' },
 ]
 
 /**
  * Interactive viewfinder: pick which part of the source feeds the
- * kaleidoscope. Drag anywhere to pan, drag corners to resize, scroll to
- * zoom in/out, double-click to reset.
+ * kaleidoscope. The selected area is shown as a circular viewport (like a
+ * real kaleidoscope tube). Drag anywhere to pan, drag corners to resize,
+ * scroll to zoom in/out, double-click to reset.
  */
 export default function Viewfinder({ source, viewport, onChange, onReset }) {
   const boxRef = useRef(null)
@@ -99,7 +100,7 @@ export default function Viewfinder({ source, viewport, onChange, onReset }) {
         <button
           type="button"
           onClick={onReset}
-          className="flex items-center gap-1 border border-line-strong bg-paper px-2 py-1 text-[11.5px] font-semibold text-ink-soft transition-colors hover:border-ink hover:text-ink"
+          className="pressable flex items-center gap-1 border border-line-strong bg-paper px-2 py-1 text-[11.5px] font-semibold text-ink-soft hover:border-ink hover:text-ink"
         >
           <ResetIcon size={12} />
           Reset
@@ -108,7 +109,7 @@ export default function Viewfinder({ source, viewport, onChange, onReset }) {
 
       <div
         ref={boxRef}
-        className="no-select relative aspect-[4/3] w-full touch-none overflow-hidden border border-line bg-paper-deep"
+        className="no-select relative aspect-[4/3] w-full touch-none overflow-hidden border border-line bg-paper-deep transition-colors duration-150 ease-[var(--ease-snappy)] hover:border-line-strong"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -116,53 +117,49 @@ export default function Viewfinder({ source, viewport, onChange, onReset }) {
         style={{ cursor: dragRef.current?.mode === 'pan' ? 'grabbing' : 'grab' }}
       >
         <img
+          key={source.url}
           src={source.url}
           alt="Active source"
           draggable={false}
-          className="absolute pointer-events-none"
+          className="source-in absolute pointer-events-none"
           style={{ left: ox, top: oy, width: imgW, height: imgH, objectFit: 'contain' }}
         />
 
-        {/* Dimmed mask outside the crop */}
+        {/* Dimmed mask outside the circular viewport */}
         {cW > 0 && (
-          <>
-            <div className="absolute bg-black/55" style={{ top: 0, left: 0, width: cW, height: rect.y }} />
-            <div
-              className="absolute bg-black/55"
-              style={{ top: rect.y + rect.s, left: 0, width: cW, height: cH - rect.y - rect.s }}
-            />
-            <div className="absolute bg-black/55" style={{ top: rect.y, left: 0, width: rect.x, height: rect.s }} />
-            <div
-              className="absolute bg-black/55"
-              style={{ top: rect.y, left: rect.x + rect.s, width: cW - rect.x - rect.s, height: rect.s }}
-            />
-          </>
-        )}
-
-        {/* Crop frame — print registration: hairline + spot-colour corner ticks */}
-        <div
-          className="absolute pointer-events-none border border-ink/70"
-          style={{ left: rect.x, top: rect.y, width: rect.s, height: rect.s }}
-        >
-          <span className="absolute -left-[1px] -top-[1px] h-2.5 w-2.5 border-l-2 border-t-2 border-reg-cyan" />
-          <span className="absolute -right-[1px] -top-[1px] h-2.5 w-2.5 border-r-2 border-t-2 border-reg-magenta" />
-          <span className="absolute -bottom-[1px] -left-[1px] h-2.5 w-2.5 border-b-2 border-l-2 border-reg-yellow" />
-          <span className="absolute -right-[1px] -bottom-[1px] h-2.5 w-2.5 border-r-2 border-b-2 border-reg-cyan" />
-        </div>
-
-        {/* Rule-of-thirds grid inside the crop */}
-        {rect.s > 24 && (
           <div
             className="absolute pointer-events-none"
+            style={{
+              inset: 0,
+              background: `radial-gradient(circle at ${center.x}px ${center.y}px, transparent 0 ${Math.max(0, rect.s / 2)}px, rgba(0, 0, 0, 0.55) ${Math.max(0, rect.s / 2)}px)`,
+            }}
+          />
+        )}
+
+        {/* Circular crop frame — a tube-like ring to mimic a real kaleidoscope */}
+        <div
+          className="absolute pointer-events-none rounded-full border border-ink/80"
+          style={{ left: rect.x, top: rect.y, width: rect.s, height: rect.s }}
+        >
+          {/* Outer rim */}
+          <span className="absolute -inset-[5px] rounded-full border border-ink/25" />
+          {/* Registration ticks at the cardinal points */}
+          <span className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 border-l-2 border-t-2 border-reg-cyan" />
+          <span className="absolute right-0 top-1/2 h-2 w-2 translate-x-1/2 -translate-y-1/2 border-r-2 border-t-2 border-reg-magenta" />
+          <span className="absolute bottom-0 left-1/2 h-2 w-2 -translate-x-1/2 translate-y-1/2 border-b-2 border-l-2 border-reg-yellow" />
+          <span className="absolute left-0 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 border-l-2 border-b-2 border-reg-cyan" />
+        </div>
+
+        {/* Radial guide inside the viewport — spokes + rings */}
+        {rect.s > 24 && (
+          <div
+            className="absolute pointer-events-none rounded-full"
             style={{
               left: rect.x,
               top: rect.y,
               width: rect.s,
               height: rect.s,
-              backgroundImage:
-                'linear-gradient(rgba(255,255,255,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.18) 1px, transparent 1px)',
-              backgroundSize: `${rect.s / 3}px ${rect.s / 3}px`,
-              backgroundPosition: 'center',
+              backgroundImage: `repeating-conic-gradient(rgba(255,255,255,0.15) 0 0.5deg, transparent 0.5deg 45deg), repeating-radial-gradient(circle at ${center.x}px ${center.y}px, transparent 0 ${Math.max(1, rect.s / 6)}px, rgba(255,255,255,0.12) ${Math.max(1, rect.s / 6)}px ${Math.max(1, rect.s / 6) + 1}px, transparent ${Math.max(1, rect.s / 6) + 1}px ${rect.s / 3}px)`,
             }}
           />
         )}
@@ -175,22 +172,22 @@ export default function Viewfinder({ source, viewport, onChange, onReset }) {
           <CrosshairIcon size={14} />
         </div>
 
-        {/* Corner handles */}
+        {/* Cardinal handles on the rim */}
         {HANDLES.map((h) => {
           const pos = {
-            nw: { left: rect.x - 11, top: rect.y - 11 },
-            ne: { left: rect.x + rect.s - 7, top: rect.y - 11 },
-            sw: { left: rect.x - 11, top: rect.y + rect.s - 7 },
-            se: { left: rect.x + rect.s - 7, top: rect.y + rect.s - 7 },
+            n: { left: center.x - 9, top: rect.y - 11 },
+            e: { left: rect.x + rect.s - 7, top: center.y - 9 },
+            s: { left: center.x - 9, top: rect.y + rect.s - 7 },
+            w: { left: rect.x - 11, top: center.y - 9 },
           }[h.id]
           return (
             <div
               key={h.id}
               data-handle={h.id}
-              className="absolute z-10 flex h-[18px] w-[18px] cursor-nwse-resize items-center justify-center"
+              className="group/handle absolute z-10 flex h-[18px] w-[18px] items-center justify-center transition-transform duration-120 ease-[var(--ease-settle)] hover:scale-125 active:scale-110"
               style={{ ...pos, cursor: h.cursor }}
             >
-              <span className="h-[9px] w-[9px] border border-ink bg-paper shadow-[0_1px_0_rgba(255,255,255,0.6)]" />
+              <span className="h-[9px] w-[9px] border border-ink bg-paper shadow-[0_1px_0_rgba(255,255,255,0.6)] transition-colors duration-150 ease-[var(--ease-snappy)] group-hover/handle:bg-ink" />
             </div>
           )
         })}
@@ -206,7 +203,7 @@ export default function Viewfinder({ source, viewport, onChange, onReset }) {
         format={(x) => `${x}px`}
       />
       <div className="text-[11px] text-ink-soft">
-        Drag to pan · corners to resize · scroll to zoom · double-click to reset
+        Drag to pan · rim handles to resize · scroll to zoom · double-click to reset
       </div>
     </div>
   )

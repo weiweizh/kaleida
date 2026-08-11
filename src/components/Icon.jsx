@@ -79,6 +79,12 @@ export const ResetIcon = (p) => (
   </svg>
 )
 
+export const CheckIcon = (p) => (
+  <svg {...base()} className={p.className} width={p.size ?? 14} height={p.size ?? 14}>
+    <path d="M4.5 12.5l5 5 10-11" />
+  </svg>
+)
+
 export const CrosshairIcon = (p) => (
   <svg {...base()} className={p.className} width={p.size ?? 14} height={p.size ?? 14}>
     <circle cx="12" cy="12" r="7.5" />

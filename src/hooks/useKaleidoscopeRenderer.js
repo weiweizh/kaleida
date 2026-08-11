@@ -59,6 +59,33 @@ export function useKaleidoscopeRenderer({ source, viewport, params, adjustments,
   const renderH = tileCount > 1 ? renderW : outH
 
   const dirtyRef = useRef(true)
+  const smoothViewportRef = useRef(null)
+
+  // ---- Viewport smoothing ----
+  // The UI viewport is the drag target; we ease a separate "display viewport"
+  // toward it each frame so moving the crop morphs the pattern smoothly.
+  const SMOOTH_RATE = 9
+  const SNAP_EPS = 0.04
+  const reducedMotion =
+    typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+
+  /** Ease the display viewport one step toward the target; returns distance left. */
+  const easeViewport = (target, dt) => {
+    const cur = smoothViewportRef.current
+    if (!cur) {
+      smoothViewportRef.current = { ...target }
+      return 0
+    }
+    const k = 1 - Math.exp(-dt * SMOOTH_RATE)
+    cur.cx += (target.cx - cur.cx) * k
+    cur.cy += (target.cy - cur.cy) * k
+    cur.halfSize += (target.halfSize - cur.halfSize) * k
+    return Math.max(
+      Math.abs(target.cx - cur.cx),
+      Math.abs(target.cy - cur.cy),
+      Math.abs(target.halfSize - cur.halfSize),
+    )
+  }
 
   /** Rebuild the cached source buffer when image or adjustments change. */
   const ensureSource = () => {
@@ -104,6 +131,7 @@ export function useKaleidoscopeRenderer({ source, viewport, params, adjustments,
   useEffect(() => {
     ensureSource()
     dirtyRef.current = true
+    smoothViewportRef.current = null
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source?.url, adjustments])
 
@@ -117,7 +145,7 @@ export function useKaleidoscopeRenderer({ source, viewport, params, adjustments,
     const canvas = canvasRef.current
     const R = rendererRef.current
     const src = sourceRef.current
-    const vp = viewportRef.current
+    const vp = smoothViewportRef.current || viewportRef.current
     if (!canvas || !R || !R.map || !R.outData || !vp) return
     const rp = buildRenderParams(paramsRef.current, vp, time)
     const geometric = rp.mode === 'geometric'
@@ -152,6 +180,10 @@ export function useKaleidoscopeRenderer({ source, viewport, params, adjustments,
       vctx.fillRect(0, 0, W, H)
     }
 
+    // Output transparency — fade the whole pattern over the background.
+    const opacity = (adjustmentsRef.current.opacity ?? 100) / 100
+    vctx.globalAlpha = Math.max(0, Math.min(1, opacity))
+
     const disp = displayRef.current || { layout: 'single', tiles: 1, gap: 0 }
     const tiles = disp.layout === 'tiled' ? Math.min(8, Math.max(1, disp.tiles | 0)) : 1
 
@@ -160,19 +192,21 @@ export function useKaleidoscopeRenderer({ source, viewport, params, adjustments,
       return
     }
 
-    // Stamp the tile in a grid that fills the rectangle edge-to-edge. The
-    // cell count adapts to the canvas aspect ratio so cells stay close to
-    // square; each cell is drawn at its exact fractional size so no remainder
-    // band is left at the edges.
+    // Stamp the tile in a grid whose cells are exactly square. The cell
+    // count adapts to the canvas aspect ratio; the grid is centred so the
+    // remainder is left as an even gutter instead of stretched cells.
     const cols = W >= H ? Math.max(1, Math.round((tiles * W) / H)) : tiles
     const rows = W >= H ? tiles : Math.max(1, Math.round((tiles * H) / W))
     const cellW = W / cols
     const cellH = H / rows
-    const gapPx = ((disp.gap || 0) / 100) * Math.min(cellW, cellH)
-    const tw = Math.max(1, cellW - gapPx)
-    const th = Math.max(1, cellH - gapPx)
-    const offX = (cellW - tw) / 2
-    const offY = (cellH - th) / 2
+    const cell = Math.min(cellW, cellH)
+    const gridW = cols * cell
+    const gridH = rows * cell
+    const startX = (W - gridW) / 2
+    const startY = (H - gridH) / 2
+    const gapPx = ((disp.gap || 0) / 100) * cell
+    const tw = Math.max(1, cell - gapPx)
+    const off = (cell - tw) / 2
 
     if (geometric) {
       // Geometric tiles are distinct: each cell gets its own palette + seed so
@@ -189,7 +223,7 @@ export function useKaleidoscopeRenderer({ source, viewport, params, adjustments,
             { ...rp, palette, geoSeed: (rp.geoSeed | 0) + idx * 37 },
             bg,
           )
-          vctx.drawImage(R.off, 0, 0, rs, rh, c * cellW + offX, r * cellH + offY, tw, th)
+          vctx.drawImage(R.off, 0, 0, rs, rh, startX + c * cell + off, startY + r * cell + off, tw, tw)
         }
       }
       return
@@ -197,7 +231,7 @@ export function useKaleidoscopeRenderer({ source, viewport, params, adjustments,
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        vctx.drawImage(R.off, 0, 0, rs, rh, c * cellW + offX, r * cellH + offY, tw, th)
+        vctx.drawImage(R.off, 0, 0, rs, rh, startX + c * cell + off, startY + r * cell + off, tw, tw)
       }
     }
   }
@@ -219,7 +253,21 @@ export function useKaleidoscopeRenderer({ source, viewport, params, adjustments,
       const isFlow = p.mode === 'flow'
       const isAnimated = p.playing && (isFlow || p.mode === 'geometric')
       if (isAnimated) time += dt
-      if (isAnimated || dirtyRef.current) {
+
+      // Ease the display viewport toward the drag target. When reduced motion
+      // is requested we snap instantly; otherwise we keep drawing until the
+      // eased viewport has settled within a small epsilon.
+      let smoothing = false
+      const target = viewportRef.current
+      if (target) {
+        if (reducedMotion || smoothViewportRef.current === null) {
+          smoothViewportRef.current = { ...target }
+        } else if (easeViewport(target, dt) > SNAP_EPS) {
+          smoothing = true
+        }
+      }
+
+      if (isAnimated || dirtyRef.current || smoothing) {
         dirtyRef.current = false
         draw(time)
       }
