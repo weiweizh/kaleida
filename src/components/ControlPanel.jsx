@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import SegmentedControl from './SegmentedControl.jsx'
 import Slider from './Slider.jsx'
+import Button from './Button.jsx'
+import GridCard from './GridCard.jsx'
 import { MirrorIcon, MandalaIcon, FlowIcon, GeometricIcon, PlayIcon, PauseIcon, SparkleIcon, TiledIcon, ShuffleIcon, ChevronIcon } from './Icon.jsx'
 import { GEOMETRIC_PALETTES } from '../lib/kaleidoscope.js'
 
@@ -75,16 +77,14 @@ function AnimateRow({ params, onTogglePlay }) {
         <div className="text-[13px] font-medium text-ink">Animate</div>
         <div className="spec mt-0.5">Space toggles playback</div>
       </div>
-      <button
-        type="button"
+      <Button
         onClick={onTogglePlay}
-        className={`pressable flex h-10 w-10 items-center justify-center border ${
-          params.playing ? 'border-ink bg-ink text-paper' : 'border-line-strong bg-paper text-ink-soft hover:border-ink hover:text-ink'
-        }`}
+        variant={params.playing ? 'primary' : 'ghost'}
+        size="icon"
         aria-label={params.playing ? 'Pause animation' : 'Play animation'}
       >
         {params.playing ? <PauseIcon size={17} /> : <PlayIcon size={17} />}
-      </button>
+      </Button>
     </div>
   )
 }
@@ -102,17 +102,18 @@ export default function ControlPanel({ mode, params, adjustments, background, di
       <Section title="Algorithm">
         <SegmentedControl options={MODE_OPTIONS} value={mode} onChange={onMode} />
         <p className="mt-2 text-[11.5px] leading-relaxed text-ink-soft">{MODE_BLURBS[mode]}</p>
-        <button
-          type="button"
+        <Button
           onClick={() => {
             setShuffleSpin((s) => s + 1)
             onShuffle()
           }}
-          className="pressable mt-3 flex w-full items-center justify-center gap-2 border border-ink bg-paper px-3 py-2.5 text-[12.5px] font-semibold text-ink hover:bg-ink hover:text-paper"
+          variant="outline"
+          size="md"
+          className="mt-3 w-full"
         >
           <ShuffleIcon key={shuffleSpin} size={15} className="shuffle-spin" />
           Surprise me
-        </button>
+        </Button>
       </Section>
 
       {mode === 'mirror' && (
@@ -183,14 +184,12 @@ export default function ControlPanel({ mode, params, adjustments, background, di
                 {Object.entries(GEOMETRIC_PALETTES).map(([id, pal]) => {
                   const active = params.palette === id
                   return (
-                    <button
+                    <GridCard
                       key={id}
-                      type="button"
-                      title={pal.label}
+                      active={active}
                       onClick={() => onParam('palette', id)}
-                      className={`pressable flex flex-col items-center gap-1.5 border p-2 ${
-                        active ? 'border-ink bg-paper' : 'border-line bg-white hover:border-ink'
-                      }`}
+                      title={pal.label}
+                      className="items-center gap-1.5 p-2"
                     >
                       <span className="flex h-8 w-8 items-center justify-center overflow-hidden border border-line-strong">
                         {pal.colors.map((c, i) => (
@@ -204,7 +203,7 @@ export default function ControlPanel({ mode, params, adjustments, background, di
                       <span className={`text-[10.5px] leading-tight ${active ? 'font-semibold text-ink' : 'text-ink-soft'}`}>
                         {pal.label}
                       </span>
-                    </button>
+                    </GridCard>
                   )
                 })}
               </div>

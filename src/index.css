@@ -14,6 +14,7 @@
   --color-paper: #f7f3eb;
   --color-paper-deep: #ede6d8;
   --color-ink: #23202c;
+  --color-ink-deep: #131118;
   --color-ink-soft: #5a5568;
   --color-ink-faint: #8d8798;
 
@@ -180,11 +181,11 @@ input[type="range"].kaleid-slider::-moz-range-thumb {
 .pressable {
   transition:
     transform 0.12s var(--ease-settle),
-    background-color 0.15s var(--ease-snappy),
-    border-color 0.15s var(--ease-snappy),
-    color 0.15s var(--ease-snappy),
-    box-shadow 0.15s var(--ease-snappy),
-    opacity 0.15s var(--ease-snappy);
+    background-color 0.5s var(--ease-snappy),
+    border-color 0.5s var(--ease-snappy),
+    color 0.5s var(--ease-snappy),
+    box-shadow 0.5s var(--ease-snappy),
+    opacity 0.5s var(--ease-snappy);
   will-change: transform;
 }
 
@@ -343,6 +344,98 @@ input[type="range"].kaleid-slider::-moz-range-thumb {
   animation: breathe 2.4s ease-in-out infinite;
 }
 
+/* Count badge "settle" — a single quick pulse when the library count grows,
+   drawing the eye to the updated number without any bounce. */
+@keyframes count-pulse {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.28);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.count-pulse {
+  animation: count-pulse 0.3s var(--ease-snappy) both;
+}
+
+/* Upload drop-target pulse — a brief border + scale emphasis on drag-over so
+   "drop here" is unmistakable, still transform/opacity only. */
+@keyframes drop-pulse {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.035);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.drop-pulse {
+  animation: drop-pulse 0.32s var(--ease-snappy) both;
+}
+
+/* Error dot flicker — a short, contained blink on upload failure. */
+@keyframes error-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.error-blink {
+  animation: error-blink 0.6s var(--ease-snappy) 2 both;
+}
+
+/* Data-source hover: a gentle rise so the source tiles read as liftable.
+   Kept transform-only; GridCard already handles the border drift. */
+.source-hover {
+  transition: transform 0.2s var(--ease-snappy);
+}
+.source-hover:hover {
+  transform: translateY(-2px);
+}
+
+/* Pattern card entrance — a fade + rise, staggered per card. */
+@keyframes card-in {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-in {
+  animation: card-in 0.32s var(--ease-snappy) both;
+}
+
+/* Pattern card exit — shrink + fade when removed after confirmation. */
+@keyframes card-out {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+
+.card-out {
+  animation: card-out 0.18s var(--ease-settle) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .re-fold,
   .shuffle-settle,
@@ -353,7 +446,13 @@ input[type="range"].kaleid-slider::-moz-range-thumb {
   .select-settle,
   .check-pop,
   .shuffle-spin,
-  .source-in {
+  .source-in,
+  .count-pulse,
+  .drop-pulse,
+  .error-blink,
+  .source-hover,
+  .card-in,
+  .card-out {
     animation: none !important;
     transition: none !important;
   }

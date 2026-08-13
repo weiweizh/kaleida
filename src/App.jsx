@@ -6,7 +6,8 @@ import PreviewPanel from './components/PreviewPanel.jsx'
 import logoSm from './assets/kaleidoscope-logo-sm.png'
 import { PRESETS, DEFAULT_PRESET_ID, buildPresetUrl, loadImage } from './lib/presets.js'
 import { exportKaleidoscope, GEOMETRIC_PALETTES } from './lib/kaleidoscope.js'
-import { downloadBlob, stampFilename } from './lib/utils.js'
+import { downloadBlob, stampFilename, resizeBlobToDataURL } from './lib/utils.js'
+import { addPattern, listPatterns, subscribe, compactStoredPatterns } from './lib/patternLibrary.js'
 import { defaultViewport } from './hooks/useKaleidoscopeRenderer.js'
 
 const DEFAULT_PARAMS = {
@@ -50,6 +51,17 @@ export default function App() {
   const [display, setDisplay] = useState({ layout: 'tiled', tiles: 4, gap: 0 })
   const [exporting, setExporting] = useState(false)
   const [foldKey, setFoldKey] = useState(0)
+  const [patternCount, setPatternCount] = useState(0)
+  const [addingToLibrary, setAddingToLibrary] = useState(false)
+  const [justAdded, setJustAdded] = useState(false)
+  const [libraryFull, setLibraryFull] = useState(false)
+  const [addError, setAddError] = useState('')
+
+  // Keep the library count in sync across windows (app + gallery).
+  useEffect(() => {
+    compactStoredPatterns()
+    return subscribe((patterns) => setPatternCount(patterns.length))
+  }, [])
 
   // Preload preset images and load the default source on first mount.
   useEffect(() => {
@@ -160,6 +172,46 @@ export default function App() {
       setExporting(false)
     }
   }, [source, viewport, adjustments, params, mode, background, display, exporting])
+
+  // Save the current pattern to the library. Always captures the tiled 4×4
+  // layout so every entry in the gallery reads as a repeating pattern sheet.
+  const handleAddToLibrary = useCallback(async () => {
+    if (addingToLibrary) return
+    setAddingToLibrary(true)
+    try {
+      const render = { layout: 'tiled', tiles: 4, gap: 0 }
+      const shared = {
+        source,
+        viewport,
+        adjustments,
+        params: { ...params, mode, scale: adjustments.scale },
+        background,
+        display: render,
+      }
+      const canvas = await exportKaleidoscope({ ...shared, size: 1024 })
+      const fullUrl = await resizeBlobToDataURL(canvas, 448)
+      const added = addPattern({
+        name: `Pattern ${listPatterns().length + 1}`,
+        mode,
+        thumb: fullUrl,
+        full: fullUrl,
+      })
+      setLibraryFull(added !== true)
+      if (added === 'storage') {
+        setAddError('Browser storage is full — delete some patterns in the gallery.')
+      } else {
+        setAddError('')
+      }
+      setJustAdded(true)
+      setTimeout(() => setJustAdded(false), 1600)
+      setPatternCount(listPatterns().length) // storage event doesn't fire in this window
+    } catch (err) {
+      console.error('Add to library failed:', err)
+      setAddError('Could not save — your library may be full.')
+    } finally {
+      setAddingToLibrary(false)
+    }
+  }, [source, viewport, adjustments, params, mode, background, addingToLibrary])
 
   const onMode = useCallback(
     (m) => {
@@ -274,6 +326,12 @@ export default function App() {
               display={display}
               exporting={exporting}
               onExport={handleExport}
+              patternCount={patternCount}
+              addingToLibrary={addingToLibrary}
+              justAdded={justAdded}
+              libraryFull={libraryFull}
+              addError={addError}
+              onAddToLibrary={handleAddToLibrary}
               foldKey={foldKey}
             />
           </section>

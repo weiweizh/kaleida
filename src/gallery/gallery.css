@@ -1,0 +1,71 @@
+/* The gallery is a browsing page — override the studio's locked-viewport. */
+body {
+  overflow: auto;
+}
+
+html,
+body,
+#root {
+  height: auto;
+  min-height: 100%;
+}
+
+/* ---- Pattern cards: one smooth, GPU-friendly hover pass ----
+   The card chrome (border → ink on hover, ink tick when active) lives in
+   the shared GridCard component. Only the media + tint motion lives here. */
+
+.gallery-thumb {
+  transition: transform 0.35s var(--ease-snappy);
+}
+.group:hover .gallery-thumb,
+.group:focus-within .gallery-thumb {
+  transform: scale(1.045);
+}
+
+/* Whole card rises a hair on hover — a single transform-only lift, tuned so
+   sweeping across the grid stays smooth (no paint, no zigzag). */
+.gallery-card {
+  transition: transform 0.2s var(--ease-snappy);
+}
+.gallery-card:hover {
+  transform: translateY(-2px);
+}
+.gallery-card:active {
+  transform: translateY(0) scale(0.99);
+}
+
+/* Lightbox — fade in + settle over the paper backdrop. */
+@keyframes lightbox-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes lightbox-card {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.lightbox-in {
+  animation: lightbox-in 0.18s var(--ease-snappy) both;
+}
+.lightbox-card {
+  animation: lightbox-card 0.24s var(--ease-settle) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox-in,
+  .lightbox-card,
+  .gallery-thumb,
+  .gallery-card {
+    animation: none !important;
+    transition: none !important;
+  }
+}

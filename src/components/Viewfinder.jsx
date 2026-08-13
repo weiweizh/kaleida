@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useElementSize } from '../hooks/useElementSize.js'
 import { clampViewport } from '../hooks/useKaleidoscopeRenderer.js'
 import Slider from './Slider.jsx'
+import Button from './Button.jsx'
 import { ResetIcon, CrosshairIcon } from './Icon.jsx'
 
 const HANDLES = [
@@ -97,14 +98,10 @@ export default function Viewfinder({ source, viewport, onChange, onReset }) {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="spec">Viewfinder</div>
-        <button
-          type="button"
-          onClick={onReset}
-          className="pressable flex items-center gap-1 border border-line-strong bg-paper px-2 py-1 text-[11.5px] font-semibold text-ink-soft hover:border-ink hover:text-ink"
-        >
+        <Button onClick={onReset} variant="ghost" size="xs">
           <ResetIcon size={12} />
           Reset
-        </button>
+        </Button>
       </div>
 
       <div

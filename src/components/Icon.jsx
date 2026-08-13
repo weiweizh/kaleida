@@ -64,6 +64,43 @@ export const DownloadIcon = (p) => (
   </svg>
 )
 
+export const PlusIcon = (p) => (
+  <svg {...base()} className={p.className} width={p.size ?? 18} height={p.size ?? 18}>
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+)
+
+export const LibraryIcon = (p) => (
+  <svg {...base()} className={p.className} width={p.size ?? 18} height={p.size ?? 18}>
+    <path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5Z" />
+    <path d="M19 19v2H5a1 1 0 0 1-1-1" />
+    <path d="M8 7h7M8 11h7" />
+  </svg>
+)
+
+export const ExternalIcon = (p) => (
+  <svg {...base()} className={p.className} width={p.size ?? 14} height={p.size ?? 14}>
+    <path d="M14 3h7v7" />
+    <path d="M21 3 10.5 13.5" />
+    <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" />
+  </svg>
+)
+
+export const TrashIcon = (p) => (
+  <svg {...base()} className={p.className} width={p.size ?? 15} height={p.size ?? 15}>
+    <path d="M4 7h16" />
+    <path d="M9 7V4h6v3" />
+    <path d="M6 7l1 13h10l1-13" />
+    <path d="M10 11v5M14 11v5" />
+  </svg>
+)
+
+export const CloseIcon = (p) => (
+  <svg {...base()} className={p.className} width={p.size ?? 16} height={p.size ?? 16}>
+    <path d="M6 6l12 12M18 6 6 18" />
+  </svg>
+)
+
 export const UploadIcon = (p) => (
   <svg {...base()} className={p.className} width={p.size ?? 18} height={p.size ?? 18}>
     <path d="M12 15V4" />

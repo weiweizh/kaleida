@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useElementSize } from '../hooks/useElementSize.js'
 import { useKaleidoscopeRenderer } from '../hooks/useKaleidoscopeRenderer.js'
-import { DownloadIcon } from './Icon.jsx'
+import { DownloadIcon, PlusIcon, LibraryIcon, CheckIcon, ExternalIcon } from './Icon.jsx'
+import Button from './Button.jsx'
 
 const MAX_PREVIEW = 1400
 const MIN_PREVIEW = 260
@@ -12,10 +13,39 @@ const MODE_LABELS = { mirror: 'Multi-Mirror', mandala: 'Mandala', geometric: 'Ge
  * Right panel: the live output canvas. Owns sizing + the renderer hook and
  * exposes a Download button that triggers a high-res export.
  */
-export default function PreviewPanel({ source, viewport, params, adjustments, background, display, exporting, onExport, foldKey = 0 }) {
+export default function PreviewPanel({
+  source,
+  viewport,
+  params,
+  adjustments,
+  background,
+  display,
+  exporting,
+  onExport,
+  patternCount = 0,
+  addingToLibrary = false,
+  justAdded = false,
+  libraryFull = false,
+  addError = '',
+  onAddToLibrary,
+  foldKey = 0,
+}) {
   const stageRef = useRef(null)
   const canvasRef = useRef(null)
   const stage = useElementSize(stageRef)
+
+  // Check-flash after a download completes: when `exporting` flips back to
+  // false, briefly swap the Download button to a ✓ confirmation.
+  const [downloaded, setDownloaded] = useState(false)
+  const wasExportingRef = useRef(false)
+  useEffect(() => {
+    if (wasExportingRef.current && !exporting) {
+      setDownloaded(true)
+      const t = setTimeout(() => setDownloaded(false), 1400)
+      return () => clearTimeout(t)
+    }
+    wasExportingRef.current = exporting
+  }, [exporting])
 
   const rawW = Math.floor(Math.max(MIN_PREVIEW, Math.min(stage.width, MAX_PREVIEW)))
   const rawH = Math.floor(Math.max(MIN_PREVIEW, Math.min(stage.height, MAX_PREVIEW)))
@@ -128,34 +158,76 @@ export default function PreviewPanel({ source, viewport, params, adjustments, ba
         </div>
       </div>
 
-      {/* Footer: export hint + download action */}
+      {/* Footer: export hint + library actions */}
       <div className="flex items-center justify-between gap-3 px-1 pt-3">
-        <div className="flex min-w-0 items-center gap-3 text-[11px] text-ink-faint">
+        <div className="flex min-w-0 flex-1 items-center gap-3 text-[11px] text-ink-faint">
           <span className="spec shrink-0">Exports a 2048×2048 PNG</span>
           <span className="spec hidden truncate sm:inline">Space = play/pause in Flow mode</span>
         </div>
-        <button
-          type="button"
-          onClick={onExport}
-          disabled={exporting || !source}
-          className={`pressable group flex shrink-0 items-center gap-2 border px-3.5 py-2 text-[12.5px] font-semibold ${
-            exporting || !source
-              ? 'cursor-not-allowed border-line bg-white text-ink-faint'
-              : 'border-ink bg-ink text-paper hover:bg-accent hover:border-accent'
-          }`}
-        >
-          {exporting ? (
-            <>
-              <span className="h-3 w-3 animate-spin border border-paper/40 border-t-paper" />
-              Rendering…
-            </>
-          ) : (
-            <>
-              <DownloadIcon size={15} className="transition-transform duration-150 ease-[var(--ease-snappy)] group-hover:translate-y-px" />
-              Download Pattern
-            </>
-          )}
-        </button>
+        <div className="flex flex-col items-end gap-1">
+          {addError && <div className="spec text-reg-magenta">{addError}</div>}
+          <div className="flex shrink-0 flex-nowrap items-center gap-2">
+          <Button
+            onClick={onAddToLibrary}
+            disabled={addingToLibrary || !source}
+            variant={justAdded ? (libraryFull ? 'ghost' : 'accent') : 'secondary'}
+            className="group"
+          >
+            {addingToLibrary ? (
+              <>
+                <span className="h-3 w-3 animate-spin border border-ink/25 border-t-ink" />
+                Saving…
+              </>
+            ) : justAdded ? (
+              <>
+                <CheckIcon size={15} className="check-pop" />
+                {libraryFull ? 'Library full — delete one' : 'Added to library'}
+              </>
+            ) : (
+              <>
+                <PlusIcon size={15} className="transition-transform duration-150 ease-[var(--ease-snappy)] group-hover:-translate-y-px" />
+                Add to library
+              </>
+            )}
+          </Button>
+          <Button
+            as="a"
+            href={`${import.meta.env.BASE_URL}gallery.html`}
+            target="_blank"
+            rel="noopener"
+            disabled={patternCount === 0}
+            onClick={(e) => patternCount === 0 && e.preventDefault()}
+            className="group"
+          >
+            <LibraryIcon size={15} className="transition-transform duration-150 ease-[var(--ease-snappy)] group-hover:-translate-y-px" />
+            Pattern library
+            <ExternalIcon size={12} className="opacity-70" />
+            <span
+              className={`border border-line bg-paper px-1.5 py-px text-[10.5px] font-bold tabular-nums text-ink ${justAdded ? 'count-pulse' : ''}`}
+            >
+              {patternCount}
+            </span>
+          </Button>
+          <Button onClick={onExport} disabled={exporting || !source} variant={downloaded ? 'accent' : 'primary'} className="group">
+            {exporting ? (
+              <>
+                <span className="h-3 w-3 animate-spin border border-paper/40 border-t-paper" />
+                Rendering…
+              </>
+            ) : downloaded ? (
+              <>
+                <CheckIcon size={15} className="check-pop" />
+                Downloaded
+              </>
+            ) : (
+              <>
+                <DownloadIcon size={15} className="transition-transform duration-150 ease-[var(--ease-snappy)] group-hover:translate-y-[1.5px]" />
+                Download Pattern
+              </>
+            )}
+          </Button>
+        </div>
+        </div>
       </div>
     </div>
   )
