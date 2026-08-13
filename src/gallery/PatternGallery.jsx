@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import logoSm from '../assets/kaleidoscope-logo-sm.png'
 import { listPatterns, removePattern, clearPatterns, subscribe } from '../lib/patternLibrary.js'
-import { TrashIcon, CloseIcon, DownloadIcon, ExternalIcon } from '../components/Icon.jsx'
+import { TrashIcon, CloseIcon, DownloadIcon, ExternalIcon, CheckIcon } from '../components/Icon.jsx'
 import Button from '../components/Button.jsx'
 import GridCard from '../components/GridCard.jsx'
 
@@ -20,15 +20,34 @@ function safeFileName(name) {
 }
 
 function downloadPattern(p) {
-  const a = document.createElement('a')
   const url = p.full || p.thumb
   const mime = (url || '').match(/^data:([^;,]+)/)?.[1]
   const ext = mime === 'image/png' ? 'png' : mime === 'image/jpeg' ? 'jpg' : mime === 'image/webp' ? 'webp' : 'png'
-  a.href = url
-  a.download = `${safeFileName(p.name)}.${ext}`
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
+
+  // Convert the data URL to a Blob and download via an object URL. This avoids
+  // navigating the current tab (which can blank the page, e.g. in Safari when
+  // the `download` attribute on a data: URL is ignored).
+  fetch(url)
+    .then((r) => r.blob())
+    .then((blob) => {
+      const objectUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = objectUrl
+      a.download = `${safeFileName(p.name)}.${ext}`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 4000)
+    })
+    .catch(() => {
+      // Fallback: plain data URL anchor (best-effort).
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${safeFileName(p.name)}.${ext}`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+    })
 }
 
 /**
